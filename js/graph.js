@@ -108,6 +108,40 @@ async function ensureTable(accessToken, itemId, worksheetName, tableName, header
   return created;
 }
 
+/**
+ * Garantiza que exista una hoja "Resumen" con el total de ingresos, gastos y
+ * ahorro, calculado con fórmulas que suman las columnas de la tabla de
+ * registros (se actualizan solas cada vez que se agrega una fila nueva).
+ */
+async function ensureSummarySheet(accessToken, itemId, tableName) {
+  const SHEET_NAME = "Resumen";
+  const worksheets = await listWorksheets(accessToken, itemId);
+
+  if (!worksheets.some((w) => w.name === SHEET_NAME)) {
+    await graphFetch(accessToken, `/me/drive/items/${itemId}/workbook/worksheets/add`, {
+      method: "POST",
+      body: JSON.stringify({ name: SHEET_NAME }),
+    });
+  }
+
+  await graphFetch(
+    accessToken,
+    `/me/drive/items/${itemId}/workbook/worksheets('${encodeURIComponent(
+      SHEET_NAME
+    )}')/range(address='A1:B3')`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        values: [
+          ["Total ingresos (COP $)", `=SUM(${tableName}[Ingreso (COP $)])`],
+          ["Total gastos (COP $)", `=SUM(${tableName}[Gasto (COP $)])`],
+          ["Total ahorro (COP $)", `=SUM(${tableName}[Ahorro (COP $)])`],
+        ],
+      }),
+    }
+  );
+}
+
 /** Agrega una fila al final de la tabla indicada. `values` es un arreglo con un valor por columna. */
 async function addTableRow(accessToken, itemId, tableName, values) {
   return graphFetch(

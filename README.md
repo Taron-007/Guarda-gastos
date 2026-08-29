@@ -12,6 +12,11 @@ agrega una nueva fila a una tabla de tu archivo con estas columnas:
 - **Tipo de ingreso**
 - **Gasto (COP $)**
 - **Categoría de gasto**
+- **Ahorro (COP $)**
+
+La app también crea una hoja aparte llamada **"Resumen"** con tres fórmulas
+que se actualizan solas: el total de ingresos, el total de gastos y el total
+ahorrado, sumando toda la tabla.
 
 ## Cómo funciona
 
@@ -114,9 +119,11 @@ Entra ID si quieres probar así).
    de los resultados.
 3. Elige la hoja donde quieres guardar los datos y el nombre de la tabla
    (por defecto `Gastos`). Si la tabla no existe, la app la crea
-   automáticamente con las columnas correctas en la celda A1 de esa hoja.
+   automáticamente con las columnas correctas en la celda A1 de esa hoja, y
+   también crea la hoja "Resumen" con los tres totales (KPI).
 4. Listo — ya puedes llenar el formulario (Fecha, Ingreso, Tipo de ingreso,
-   Gasto, Categoría de gasto) y cada envío agrega una fila nueva a tu Excel.
+   Gasto, Categoría de gasto, Ahorro) y cada envío agrega una fila nueva a tu
+   Excel; la hoja "Resumen" se actualiza sola.
 
 Puedes cambiar de archivo/tabla en cualquier momento con el botón "cambiar"
 junto al nombre del archivo.

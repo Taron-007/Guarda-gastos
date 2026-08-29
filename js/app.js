@@ -7,6 +7,7 @@ const TABLE_HEADERS = [
   "Tipo de ingreso",
   "Gasto (COP $)",
   "Categoría de gasto",
+  "Ahorro (COP $)",
 ];
 
 const CONFIG_KEY = "gg_config";
@@ -40,6 +41,7 @@ const els = {
   inputTipoIngreso: document.getElementById("input-tipo-ingreso"),
   inputGasto: document.getElementById("input-gasto"),
   inputCategoriaGasto: document.getElementById("input-categoria-gasto"),
+  inputAhorro: document.getElementById("input-ahorro"),
   formError: document.getElementById("form-error"),
   formStatus: document.getElementById("form-status"),
   pendingBox: document.getElementById("pending-box"),
@@ -93,7 +95,9 @@ function renderRecent() {
       "es-CO"
     )} (${item.tipoIngreso || "-"}) · Gasto $${item.gasto.toLocaleString(
       "es-CO"
-    )} (${item.categoriaGasto || "-"})`;
+    )} (${item.categoriaGasto || "-"}) · Ahorro $${item.ahorro.toLocaleString(
+      "es-CO"
+    )}`;
     els.recentList.appendChild(li);
   }
 }
@@ -259,6 +263,7 @@ els.btnConfirmSetup.addEventListener("click", async () => {
       tableName,
       TABLE_HEADERS
     );
+    await ensureSummarySheet(token, selectedFile.id, table.name);
     saveConfig({
       itemId: selectedFile.id,
       itemName: selectedFile.name,
@@ -286,15 +291,16 @@ els.formEntry.addEventListener("submit", async (e) => {
   const tipoIngreso = els.inputTipoIngreso.value.trim();
   const gasto = Number(els.inputGasto.value || 0);
   const categoriaGasto = els.inputCategoriaGasto.value.trim();
+  const ahorro = Number(els.inputAhorro.value || 0);
 
-  const values = [fecha, ingreso, tipoIngreso, gasto, categoriaGasto];
+  const values = [fecha, ingreso, tipoIngreso, gasto, categoriaGasto, ahorro];
 
   try {
     const token = await getAccessToken();
     await addTableRow(token, config.itemId, config.tableName, values);
     els.formStatus.hidden = false;
     els.formStatus.textContent = "Guardado en Excel ✔";
-    pushRecent({ fecha, ingreso, tipoIngreso, gasto, categoriaGasto });
+    pushRecent({ fecha, ingreso, tipoIngreso, gasto, categoriaGasto, ahorro });
     els.formEntry.reset();
     els.inputFecha.value = todayISO();
   } catch (err) {

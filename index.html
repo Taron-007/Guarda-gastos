@@ -53,7 +53,8 @@
         </label>
         <p class="hint">
           Si la tabla no existe todavía, se creará automáticamente con las
-          columnas correctas.
+          columnas correctas, junto con una hoja "Resumen" con el total de
+          ingresos, gastos y ahorro.
         </p>
         <button id="btn-confirm-setup" class="primary-btn">Usar esta tabla</button>
       </div>
@@ -113,10 +114,17 @@
               <option value="Entretenimiento"></option>
               <option value="Educación"></option>
               <option value="Ropa"></option>
-              <option value="Ahorro / Inversión"></option>
               <option value="Deudas"></option>
               <option value="Otros"></option>
             </datalist>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Ahorro</legend>
+          <label>
+            Ahorro (COP $)
+            <input id="input-ahorro" type="number" min="0" step="1" inputmode="numeric" placeholder="0" />
           </label>
         </fieldset>
 
