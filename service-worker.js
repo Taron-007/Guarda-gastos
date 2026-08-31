@@ -2,11 +2,12 @@
 // y se pueda instalar en la pantalla de inicio del iPhone. No cachea llamadas
 // a Microsoft Graph (esas siempre deben ir a la red).
 
-const CACHE_NAME = "guarda-gastos-v4";
+const CACHE_NAME = "guarda-gastos-v5";
 const SHELL_FILES = [
   "./",
   "./index.html",
   "./css/style.css",
+  "./js/vendor/msal-browser.min.js",
   "./js/app.js",
   "./js/auth.js",
   "./js/graph.js",

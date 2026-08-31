@@ -145,7 +145,10 @@
   </main>
 
   <!-- Librería oficial de Microsoft para el inicio de sesión (MSAL for Browser). -->
-  <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
+  <!-- Se incluye copiada dentro de la app (en vez de cargarla desde un CDN externo)
+       porque algunos CDNs (alcdn.msauth.net, cdn.jsdelivr.net) no cargaban de forma
+       confiable en algunas redes/navegadores, causando "msal is not defined". -->
+  <script src="js/vendor/msal-browser.min.js"></script>
   <script src="js/msal-config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/graph.js"></script>
