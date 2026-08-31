@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Guarda Gastos</title>
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Guarda Gastos" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#16a34a" />
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>💰 Guarda Gastos</h1>
+    <button id="btn-signout" class="link-btn" hidden>Salir</button>
+  </header>
+
+  <main id="app">
+    <!-- Pantalla de inicio de sesión -->
+    <section id="view-login" class="view">
+      <p class="hint">
+        Conecta tu cuenta de Microsoft para guardar tus ingresos y gastos
+        directamente en un archivo Excel de tu OneDrive.
+      </p>
+      <button id="btn-signin" class="primary-btn">Iniciar sesión con Microsoft</button>
+      <p id="login-error" class="error" hidden></p>
+    </section>
+
+    <!-- Pantalla de configuración: elegir archivo y tabla -->
+    <section id="view-setup" class="view" hidden>
+      <h2>Elige tu archivo de Excel</h2>
+      <p class="hint">Busca el archivo .xlsx guardado en tu OneDrive.</p>
+      <p id="setup-account" class="hint"></p>
+      <form id="form-search" class="row">
+        <input id="input-search" type="text" placeholder="Ej: Gastos 2026" required />
+        <button type="submit" class="primary-btn">Buscar</button>
+      </form>
+      <ul id="file-results" class="list"></ul>
+
+      <div id="setup-details" hidden>
+        <h3>Hoja y tabla</h3>
+        <label>
+          Hoja de cálculo
+          <select id="select-worksheet"></select>
+        </label>
+        <label>
+          Nombre de la tabla
+          <input id="input-tablename" type="text" value="Gastos" />
+        </label>
+        <p class="hint">
+          Si la tabla no existe todavía, se creará automáticamente con las
+          columnas correctas, junto con una hoja "Resumen" con el total de
+          ingresos, gastos y ahorro.
+        </p>
+        <button id="btn-confirm-setup" class="primary-btn">Usar esta tabla</button>
+      </div>
+
+      <p id="setup-error" class="error" hidden></p>
+      <p id="setup-status" class="status" hidden></p>
+    </section>
+
+    <!-- Pantalla principal: formulario de registro -->
+    <section id="view-form" class="view" hidden>
+      <p class="file-label">
+        📄 <span id="current-file-name"></span>
+        <button id="btn-change-file" class="link-btn">cambiar</button>
+      </p>
+
+      <form id="form-entry">
+        <label>
+          Fecha
+          <input id="input-fecha" type="date" required />
+        </label>
+
+        <fieldset>
+          <legend>Ingreso</legend>
+          <label>
+            Ingreso (COP $)
+            <input id="input-ingreso" type="number" min="0" step="1" inputmode="numeric" placeholder="0" />
+          </label>
+          <label>
+            Tipo de ingreso
+            <input id="input-tipo-ingreso" list="lista-tipos-ingreso" placeholder="Ej: Salario" />
+            <datalist id="lista-tipos-ingreso">
+              <option value="Salario"></option>
+              <option value="Freelance"></option>
+              <option value="Negocio"></option>
+              <option value="Inversión"></option>
+              <option value="Regalo"></option>
+              <option value="Otro"></option>
+            </datalist>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Gasto</legend>
+          <label>
+            Gasto (COP $)
+            <input id="input-gasto" type="number" min="0" step="1" inputmode="numeric" placeholder="0" />
+          </label>
+          <label>
+            Categoría de gasto
+            <input id="input-categoria-gasto" list="lista-categorias" placeholder="Ej: Alimentación" />
+            <datalist id="lista-categorias">
+              <option value="Alimentación"></option>
+              <option value="Transporte"></option>
+              <option value="Vivienda"></option>
+              <option value="Servicios públicos"></option>
+              <option value="Salud"></option>
+              <option value="Entretenimiento"></option>
+              <option value="Educación"></option>
+              <option value="Ropa"></option>
+              <option value="Deudas"></option>
+              <option value="Otros"></option>
+            </datalist>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Ahorro</legend>
+          <label>
+            Ahorro (COP $)
+            <input id="input-ahorro" type="number" min="0" step="1" inputmode="numeric" placeholder="0" />
+          </label>
+        </fieldset>
+
+        <button type="submit" class="primary-btn">Guardar en Excel</button>
+      </form>
+
+      <p id="form-error" class="error" hidden></p>
+      <p id="form-status" class="status" hidden></p>
+
+      <div id="pending-box" hidden>
+        <p><span id="pending-count">0</span> registro(s) sin enviar (sin conexión).</p>
+        <button id="btn-retry-pending" class="link-btn">Reintentar ahora</button>
+      </div>
+
+      <h3>Últimos registros</h3>
+      <ul id="recent-list" class="list"></ul>
+    </section>
+  </main>
+
+  <!-- Librería oficial de Microsoft para el inicio de sesión (MSAL for Browser). -->
+  <!-- Se incluye copiada dentro de la app (en vez de cargarla desde un CDN externo)
+       porque algunos CDNs (alcdn.msauth.net, cdn.jsdelivr.net) no cargaban de forma
+       confiable en algunas redes/navegadores, causando "msal is not defined". -->
+  <script src="js/vendor/msal-browser.min.js"></script>
+  <script src="js/msal-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/graph.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
