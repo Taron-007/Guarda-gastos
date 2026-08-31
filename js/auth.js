@@ -1,13 +1,23 @@
 // Manejo de sesión con MSAL (Microsoft Authentication Library).
 
-const msalInstance = new msal.PublicClientApplication(msalConfig);
 let activeAccount = null;
 
-// MSAL exige que initialize() termine antes de llamar cualquier otro método.
-// Se dispara una sola vez aquí y todas las funciones esperan esta misma
-// promesa, para no depender de que initAuth() ya haya corrido (por ejemplo,
-// si el usuario toca "Iniciar sesión" muy rápido apenas carga la página).
-const msalReady = msalInstance.initialize();
+// Si algo falla al crear la instancia de MSAL (config inválida, la librería
+// de msal-browser no cargó, etc.) lo capturamos aquí para poder mostrar el
+// error real en pantalla, en vez de un error genérico y confuso más
+// adelante. También esperamos initialize() una sola vez desde acá: todas
+// las funciones usan la misma promesa, así no importa si el usuario toca
+// "Iniciar sesión" antes de que termine de cargar.
+let msalInstance;
+let msalReady;
+try {
+  msalInstance = new msal.PublicClientApplication(msalConfig);
+  msalReady = msalInstance.initialize();
+} catch (err) {
+  msalReady = Promise.reject(
+    new Error("No se pudo crear la instancia de MSAL: " + err.message)
+  );
+}
 
 async function initAuth() {
   await msalReady;
