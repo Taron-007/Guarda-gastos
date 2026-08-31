@@ -14,9 +14,14 @@ const msalConfig = {
     // "organizations" = solo cuentas de trabajo/escuela
     // "common" = ambas
     authority: "https://login.microsoftonline.com/consumers",
-    // Debe coincidir EXACTO con la URI de redirección configurada en Entra ID
-    // y con la URL donde publiques esta app (GitHub Pages, etc.).
-    redirectUri: window.location.origin + window.location.pathname,
+    // Fija (no calculada desde window.location): abrir la app desde Safari
+    // normal carga ".../Guarda-gastos/", pero abrirla desde el ícono
+    // instalado en la pantalla de inicio carga ".../Guarda-gastos/index.html"
+    // (por el start_url del manifest). Si esta URI se calculara dinámicamente,
+    // cada forma de abrir la app generaría una redirectUri distinta y solo
+    // una podría coincidir con la registrada en Entra ID. Debe coincidir
+    // EXACTO con la URI de redirección configurada ahí.
+    redirectUri: window.location.origin + "/Guarda-gastos/",
   },
   cache: {
     cacheLocation: "localStorage",
