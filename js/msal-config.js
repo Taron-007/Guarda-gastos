@@ -9,7 +9,7 @@
 const msalConfig = {
   auth: {
     // Reemplaza por el Application (client) ID de tu registro en Entra ID.
-    clientId: "REEMPLAZA_CON_TU_CLIENT_ID",
+    clientId: "f8dce7b1-f61c-4874-999d-67979c29efd3",
     // "consumers" = solo cuentas personales (outlook.com, hotmail.com, etc.)
     // "organizations" = solo cuentas de trabajo/escuela
     // "common" = ambas
