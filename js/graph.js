@@ -30,13 +30,29 @@ async function graphFetch(accessToken, path, options = {}) {
 
 /** Busca archivos de Excel en el OneDrive del usuario cuyo nombre contenga `query`. */
 async function searchExcelFiles(accessToken, query) {
+  const term = query.trim().toLowerCase();
   const q = encodeURIComponent(query.trim());
   const data = await graphFetch(
     accessToken,
     `/me/drive/root/search(q='${q}')?$select=id,name,webUrl,parentReference,file`
   );
-  return (data.value || []).filter((item) =>
+  const results = (data.value || []).filter((item) =>
     item.name.toLowerCase().endsWith(".xlsx")
+  );
+  if (results.length > 0) return results;
+
+  // El buscador de OneDrive puede tardar minutos en indexar un archivo recién
+  // creado. Como respaldo, si la búsqueda no encontró nada, revisamos también
+  // los archivos que están directamente en la raíz del OneDrive (esto no
+  // depende del índice de búsqueda, así que ve archivos nuevos al instante).
+  const rootData = await graphFetch(
+    accessToken,
+    `/me/drive/root/children?$select=id,name,webUrl,parentReference,file`
+  );
+  return (rootData.value || []).filter(
+    (item) =>
+      item.name.toLowerCase().endsWith(".xlsx") &&
+      item.name.toLowerCase().includes(term)
   );
 }
 
