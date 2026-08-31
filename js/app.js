@@ -25,6 +25,7 @@ const els = {
 
   formSearch: document.getElementById("form-search"),
   inputSearch: document.getElementById("input-search"),
+  setupAccount: document.getElementById("setup-account"),
   fileResults: document.getElementById("file-results"),
   setupDetails: document.getElementById("setup-details"),
   selectWorksheet: document.getElementById("select-worksheet"),
@@ -167,6 +168,9 @@ async function enterSetupView() {
   els.setupDetails.hidden = true;
   els.fileResults.innerHTML = "";
   selectedFile = null;
+  els.setupAccount.textContent = activeAccount?.username
+    ? `Sesión iniciada como: ${activeAccount.username}`
+    : "";
 }
 
 // ---- Eventos ----
