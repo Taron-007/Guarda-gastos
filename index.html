@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Guarda Gastos</title>
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Guarda Gastos" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#16a34a" />
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1 id="topbar-title">💰 Guarda Gastos</h1>
+  </header>
+
+  <main id="app">
+    <!-- Dashboard -->
+    <section id="view-dashboard" class="view">
+      <div class="year-row">
+        <label for="select-year">Año</label>
+        <select id="select-year"></select>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-ingreso">
+          <span class="kpi-label">Ingresos</span>
+          <span id="kpi-ingreso" class="kpi-value">$0</span>
+        </div>
+        <div class="kpi-card kpi-egreso">
+          <span class="kpi-label">Egresos</span>
+          <span id="kpi-egreso" class="kpi-value">$0</span>
+        </div>
+        <div class="kpi-card kpi-ahorro">
+          <span class="kpi-label">Ahorros</span>
+          <span id="kpi-ahorro" class="kpi-value">$0</span>
+        </div>
+        <div class="kpi-card kpi-sobrante">
+          <span class="kpi-label">Sobrante</span>
+          <span id="kpi-sobrante" class="kpi-value">$0</span>
+        </div>
+      </div>
+
+      <p id="dashboard-empty" class="empty-hint" hidden>
+        Todavía no hay registros para este año. Ve a "Nuevo" para agregar el primero.
+      </p>
+
+      <h2 class="section-title">Ingresos y egresos por mes</h2>
+      <svg id="monthly-chart" class="monthly-chart" role="img" aria-label="Gráfico mensual de ingresos, egresos y ahorros"></svg>
+      <div class="chart-legend">
+        <span><i style="background:#16a34a"></i>Ingreso</span>
+        <span><i style="background:#dc2626"></i>Egreso</span>
+        <span><i style="background:#2563eb"></i>Ahorro</span>
+      </div>
+
+      <h2 class="section-title">Ingresos por categoría</h2>
+      <div id="breakdown-ingreso" class="bar-list"></div>
+
+      <h2 class="section-title">Egresos por categoría</h2>
+      <div id="breakdown-egreso" class="bar-list"></div>
+
+      <h2 class="section-title">Ahorros por categoría</h2>
+      <div id="breakdown-ahorro" class="bar-list"></div>
+    </section>
+
+    <!-- Nuevo registro -->
+    <section id="view-nuevo" class="view" hidden>
+      <form id="form-nuevo">
+        <label>
+          Tipo
+          <select id="input-tipo">
+            <option value="ingreso">Ingreso</option>
+            <option value="egreso">Egreso</option>
+            <option value="ahorro">Ahorro</option>
+          </select>
+        </label>
+
+        <label>
+          Categoría
+          <select id="input-grupo"></select>
+        </label>
+
+        <label id="subcat-wrap">
+          Detalle
+          <select id="input-subcat"></select>
+        </label>
+
+        <label>
+          Monto (COP $)
+          <input id="input-monto" type="number" min="0" step="1" inputmode="numeric" placeholder="0" required />
+        </label>
+
+        <label>
+          Fecha
+          <input id="input-fecha" type="date" required />
+        </label>
+
+        <label>
+          Nota (opcional)
+          <input id="input-nota" type="text" placeholder="Ej: recibo de enero" />
+        </label>
+
+        <button type="submit" class="primary-btn">Guardar registro</button>
+      </form>
+      <p id="form-status" class="status" hidden></p>
+    </section>
+
+    <!-- Historial -->
+    <section id="view-historial" class="view" hidden>
+      <div class="filter-row">
+        <select id="historial-year"></select>
+        <select id="historial-tipo">
+          <option value="todos">Todos los tipos</option>
+          <option value="ingreso">Ingresos</option>
+          <option value="egreso">Egresos</option>
+          <option value="ahorro">Ahorros</option>
+        </select>
+      </div>
+      <ul id="historial-list" class="hist-list"></ul>
+    </section>
+
+    <!-- Ajustes / respaldo -->
+    <section id="view-ajustes" class="view" hidden>
+      <h2 class="section-title">Respaldo de datos</h2>
+      <p class="hint">
+        Todos tus registros se guardan únicamente en este dispositivo (base de
+        datos local del navegador). Exporta un respaldo de vez en cuando para
+        no perder tu información si cambias de teléfono o borras la app.
+      </p>
+      <button id="btn-export" class="secondary-btn">Exportar respaldo (JSON)</button>
+
+      <label class="file-label-import">
+        Importar respaldo (JSON)
+        <input id="input-import" type="file" accept="application/json" />
+      </label>
+
+      <h2 class="section-title danger-title">Zona de riesgo</h2>
+      <button id="btn-reset" class="danger-btn">Borrar todos los registros</button>
+
+      <p id="ajustes-status" class="status" hidden></p>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button id="tab-dashboard" class="tab-btn active">
+      <span class="tab-icon">📊</span>Resumen
+    </button>
+    <button id="tab-nuevo" class="tab-btn">
+      <span class="tab-icon">➕</span>Nuevo
+    </button>
+    <button id="tab-historial" class="tab-btn">
+      <span class="tab-icon">📜</span>Historial
+    </button>
+    <button id="tab-ajustes" class="tab-btn">
+      <span class="tab-icon">⚙️</span>Ajustes
+    </button>
+  </nav>
+
+  <script src="js/categories.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
