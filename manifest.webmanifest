@@ -1,7 +1,7 @@
 {
   "name": "Guarda Gastos",
   "short_name": "Guarda Gastos",
-  "description": "Registra ingresos y gastos directamente en tu Excel de OneDrive",
+  "description": "Control de ingresos, egresos y ahorros con base de datos local y dashboard anual",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

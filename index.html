@@ -16,143 +16,155 @@
 </head>
 <body>
   <header class="topbar">
-    <h1>💰 Guarda Gastos</h1>
-    <button id="btn-signout" class="link-btn" hidden>Salir</button>
+    <h1 id="topbar-title">💰 Guarda Gastos</h1>
   </header>
 
   <main id="app">
-    <!-- Pantalla de inicio de sesión -->
-    <section id="view-login" class="view">
-      <p class="hint">
-        Conecta tu cuenta de Microsoft para guardar tus ingresos y gastos
-        directamente en un archivo Excel de tu OneDrive.
-      </p>
-      <button id="btn-signin" class="primary-btn">Iniciar sesión con Microsoft</button>
-      <p id="login-error" class="error" hidden></p>
-    </section>
-
-    <!-- Pantalla de configuración: elegir archivo y tabla -->
-    <section id="view-setup" class="view" hidden>
-      <h2>Elige tu archivo de Excel</h2>
-      <p class="hint">Busca el archivo .xlsx guardado en tu OneDrive.</p>
-      <p id="setup-account" class="hint"></p>
-      <form id="form-search" class="row">
-        <input id="input-search" type="text" placeholder="Ej: Gastos 2026" required />
-        <button type="submit" class="primary-btn">Buscar</button>
-      </form>
-      <ul id="file-results" class="list"></ul>
-
-      <div id="setup-details" hidden>
-        <h3>Hoja y tabla</h3>
-        <label>
-          Hoja de cálculo
-          <select id="select-worksheet"></select>
-        </label>
-        <label>
-          Nombre de la tabla
-          <input id="input-tablename" type="text" value="Gastos" />
-        </label>
-        <p class="hint">
-          Si la tabla no existe todavía, se creará automáticamente con las
-          columnas correctas, junto con una hoja "Resumen" con el total de
-          ingresos, gastos y ahorro.
-        </p>
-        <button id="btn-confirm-setup" class="primary-btn">Usar esta tabla</button>
+    <!-- Dashboard -->
+    <section id="view-dashboard" class="view">
+      <div class="year-row">
+        <label for="select-year">Año</label>
+        <select id="select-year"></select>
       </div>
 
-      <p id="setup-error" class="error" hidden></p>
-      <p id="setup-status" class="status" hidden></p>
-    </section>
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-ingreso">
+          <span class="kpi-label">Ingresos</span>
+          <span id="kpi-ingreso" class="kpi-value">$0</span>
+        </div>
+        <div class="kpi-card kpi-egreso">
+          <span class="kpi-label">Egresos</span>
+          <span id="kpi-egreso" class="kpi-value">$0</span>
+        </div>
+        <div class="kpi-card kpi-ahorro">
+          <span class="kpi-label">Ahorros</span>
+          <span id="kpi-ahorro" class="kpi-value">$0</span>
+        </div>
+        <div class="kpi-card kpi-sobrante">
+          <span class="kpi-label">Sobrante</span>
+          <span id="kpi-sobrante" class="kpi-value">$0</span>
+        </div>
+      </div>
 
-    <!-- Pantalla principal: formulario de registro -->
-    <section id="view-form" class="view" hidden>
-      <p class="file-label">
-        📄 <span id="current-file-name"></span>
-        <button id="btn-change-file" class="link-btn">cambiar</button>
+      <p id="dashboard-empty" class="empty-hint" hidden>
+        Todavía no hay registros para este año. Ve a "Nuevo" para agregar el primero.
       </p>
 
-      <form id="form-entry">
+      <h2 class="section-title">Ingresos y egresos por mes</h2>
+      <svg id="monthly-chart" class="monthly-chart" role="img" aria-label="Gráfico mensual de ingresos, egresos y ahorros"></svg>
+      <div class="chart-legend">
+        <span><i style="background:#16a34a"></i>Ingreso</span>
+        <span><i style="background:#dc2626"></i>Egreso</span>
+        <span><i style="background:#2563eb"></i>Ahorro</span>
+      </div>
+
+      <h2 class="section-title">Ingresos por categoría</h2>
+      <div id="breakdown-ingreso" class="bar-list"></div>
+
+      <h2 class="section-title">Egresos por categoría</h2>
+      <div id="breakdown-egreso" class="bar-list"></div>
+
+      <h2 class="section-title">Ahorros por categoría</h2>
+      <div id="breakdown-ahorro" class="bar-list"></div>
+    </section>
+
+    <!-- Nuevo registro -->
+    <section id="view-nuevo" class="view" hidden>
+      <form id="form-nuevo">
+        <label>
+          Tipo
+          <select id="input-tipo">
+            <option value="ingreso">Ingreso</option>
+            <option value="egreso">Egreso</option>
+            <option value="ahorro">Ahorro</option>
+          </select>
+        </label>
+
+        <label>
+          Categoría
+          <select id="input-grupo"></select>
+        </label>
+
+        <label id="subcat-wrap">
+          Detalle
+          <select id="input-subcat"></select>
+        </label>
+
+        <label>
+          Monto (COP $)
+          <input id="input-monto" type="number" min="0" step="1" inputmode="numeric" placeholder="0" required />
+        </label>
+
         <label>
           Fecha
           <input id="input-fecha" type="date" required />
         </label>
 
-        <fieldset>
-          <legend>Ingreso</legend>
-          <label>
-            Ingreso (COP $)
-            <input id="input-ingreso" type="number" min="0" step="1" inputmode="numeric" placeholder="0" />
-          </label>
-          <label>
-            Tipo de ingreso
-            <input id="input-tipo-ingreso" list="lista-tipos-ingreso" placeholder="Ej: Salario" />
-            <datalist id="lista-tipos-ingreso">
-              <option value="Salario"></option>
-              <option value="Freelance"></option>
-              <option value="Negocio"></option>
-              <option value="Inversión"></option>
-              <option value="Regalo"></option>
-              <option value="Otro"></option>
-            </datalist>
-          </label>
-        </fieldset>
+        <label>
+          Nota (opcional)
+          <input id="input-nota" type="text" placeholder="Ej: recibo de enero" />
+        </label>
 
-        <fieldset>
-          <legend>Gasto</legend>
-          <label>
-            Gasto (COP $)
-            <input id="input-gasto" type="number" min="0" step="1" inputmode="numeric" placeholder="0" />
-          </label>
-          <label>
-            Categoría de gasto
-            <input id="input-categoria-gasto" list="lista-categorias" placeholder="Ej: Alimentación" />
-            <datalist id="lista-categorias">
-              <option value="Alimentación"></option>
-              <option value="Transporte"></option>
-              <option value="Vivienda"></option>
-              <option value="Servicios públicos"></option>
-              <option value="Salud"></option>
-              <option value="Entretenimiento"></option>
-              <option value="Educación"></option>
-              <option value="Ropa"></option>
-              <option value="Deudas"></option>
-              <option value="Otros"></option>
-            </datalist>
-          </label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Ahorro</legend>
-          <label>
-            Ahorro (COP $)
-            <input id="input-ahorro" type="number" min="0" step="1" inputmode="numeric" placeholder="0" />
-          </label>
-        </fieldset>
-
-        <button type="submit" class="primary-btn">Guardar en Excel</button>
+        <button type="submit" class="primary-btn">Guardar registro</button>
       </form>
-
-      <p id="form-error" class="error" hidden></p>
       <p id="form-status" class="status" hidden></p>
+    </section>
 
-      <div id="pending-box" hidden>
-        <p><span id="pending-count">0</span> registro(s) sin enviar (sin conexión).</p>
-        <button id="btn-retry-pending" class="link-btn">Reintentar ahora</button>
+    <!-- Historial -->
+    <section id="view-historial" class="view" hidden>
+      <div class="filter-row">
+        <select id="historial-year"></select>
+        <select id="historial-tipo">
+          <option value="todos">Todos los tipos</option>
+          <option value="ingreso">Ingresos</option>
+          <option value="egreso">Egresos</option>
+          <option value="ahorro">Ahorros</option>
+        </select>
       </div>
+      <ul id="historial-list" class="hist-list"></ul>
+    </section>
 
-      <h3>Últimos registros</h3>
-      <ul id="recent-list" class="list"></ul>
+    <!-- Ajustes / respaldo -->
+    <section id="view-ajustes" class="view" hidden>
+      <h2 class="section-title">Respaldo de datos</h2>
+      <p class="hint">
+        Todos tus registros se guardan únicamente en este dispositivo (base de
+        datos local del navegador). Exporta un respaldo de vez en cuando para
+        no perder tu información si cambias de teléfono o borras la app.
+      </p>
+      <button id="btn-export" class="secondary-btn">Exportar respaldo (JSON)</button>
+
+      <label class="file-label-import">
+        Importar respaldo (JSON)
+        <input id="input-import" type="file" accept="application/json" />
+      </label>
+
+      <h2 class="section-title danger-title">Zona de riesgo</h2>
+      <button id="btn-reset" class="danger-btn">Borrar todos los registros</button>
+
+      <p id="ajustes-status" class="status" hidden></p>
     </section>
   </main>
 
-  <!-- Librería oficial de Microsoft para el inicio de sesión (MSAL for Browser). -->
-  <!-- Se incluye copiada dentro de la app (en vez de cargarla desde un CDN externo)
-       porque algunos CDNs (alcdn.msauth.net, cdn.jsdelivr.net) no cargaban de forma
-       confiable en algunas redes/navegadores, causando "msal is not defined". -->
-  <script src="js/vendor/msal-browser.min.js"></script>
-  <script src="js/msal-config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/graph.js"></script>
+  <nav class="tabbar">
+    <button id="tab-dashboard" class="tab-btn active">
+      <span class="tab-icon">📊</span>Resumen
+    </button>
+    <button id="tab-nuevo" class="tab-btn">
+      <span class="tab-icon">➕</span>Nuevo
+    </button>
+    <button id="tab-historial" class="tab-btn">
+      <span class="tab-icon">📜</span>Historial
+    </button>
+    <button id="tab-ajustes" class="tab-btn">
+      <span class="tab-icon">⚙️</span>Ajustes
+    </button>
+  </nav>
+
+  <script src="js/categories.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/dashboard.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

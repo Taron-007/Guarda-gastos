@@ -1,353 +1,259 @@
-// Lógica de interfaz: cambia entre pantallas (login / configuración / formulario)
-// y conecta los formularios con las funciones de auth.js y graph.js.
+(function () {
+  let transactions = [];
+  let currentYear = new Date().getFullYear();
 
-const TABLE_HEADERS = [
-  "Fecha",
-  "Ingreso (COP $)",
-  "Tipo de ingreso",
-  "Gasto (COP $)",
-  "Categoría de gasto",
-  "Ahorro (COP $)",
-];
+  const views = ["dashboard", "nuevo", "historial", "ajustes"];
 
-const CONFIG_KEY = "gg_config";
-const RECENT_KEY = "gg_recent";
-const PENDING_KEY = "gg_pending";
-
-const els = {
-  signout: document.getElementById("btn-signout"),
-  viewLogin: document.getElementById("view-login"),
-  viewSetup: document.getElementById("view-setup"),
-  viewForm: document.getElementById("view-form"),
-
-  signin: document.getElementById("btn-signin"),
-  loginError: document.getElementById("login-error"),
-
-  formSearch: document.getElementById("form-search"),
-  inputSearch: document.getElementById("input-search"),
-  setupAccount: document.getElementById("setup-account"),
-  fileResults: document.getElementById("file-results"),
-  setupDetails: document.getElementById("setup-details"),
-  selectWorksheet: document.getElementById("select-worksheet"),
-  inputTablename: document.getElementById("input-tablename"),
-  btnConfirmSetup: document.getElementById("btn-confirm-setup"),
-  setupError: document.getElementById("setup-error"),
-  setupStatus: document.getElementById("setup-status"),
-
-  currentFileName: document.getElementById("current-file-name"),
-  btnChangeFile: document.getElementById("btn-change-file"),
-  formEntry: document.getElementById("form-entry"),
-  inputFecha: document.getElementById("input-fecha"),
-  inputIngreso: document.getElementById("input-ingreso"),
-  inputTipoIngreso: document.getElementById("input-tipo-ingreso"),
-  inputGasto: document.getElementById("input-gasto"),
-  inputCategoriaGasto: document.getElementById("input-categoria-gasto"),
-  inputAhorro: document.getElementById("input-ahorro"),
-  formError: document.getElementById("form-error"),
-  formStatus: document.getElementById("form-status"),
-  pendingBox: document.getElementById("pending-box"),
-  pendingCount: document.getElementById("pending-count"),
-  btnRetryPending: document.getElementById("btn-retry-pending"),
-  recentList: document.getElementById("recent-list"),
-};
-
-let selectedFile = null; // { id, name }
-
-function showView(name) {
-  els.viewLogin.hidden = name !== "login";
-  els.viewSetup.hidden = name !== "setup";
-  els.viewForm.hidden = name !== "form";
-  els.signout.hidden = name === "login";
-}
-
-function getConfig() {
-  try {
-    return JSON.parse(localStorage.getItem(CONFIG_KEY) || "null");
-  } catch {
-    return null;
+  function showView(name) {
+    views.forEach((v) => {
+      document.getElementById("view-" + v).hidden = v !== name;
+      document.getElementById("tab-" + v).classList.toggle("active", v === name);
+    });
+    if (name === "dashboard") renderDashboard(transactions, currentYear);
+    if (name === "historial") renderHistorial();
   }
-}
 
-function saveConfig(config) {
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
-}
-
-function getRecent() {
-  try {
-    return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
-  } catch {
-    return [];
+  function setupTabs() {
+    views.forEach((v) => {
+      document.getElementById("tab-" + v).addEventListener("click", () => showView(v));
+    });
   }
-}
 
-function pushRecent(entry) {
-  const items = [entry, ...getRecent()].slice(0, 5);
-  localStorage.setItem(RECENT_KEY, JSON.stringify(items));
-  renderRecent();
-}
+  // ---------- Formulario "Nuevo" ----------
 
-function renderRecent() {
-  const items = getRecent();
-  els.recentList.innerHTML = "";
-  for (const item of items) {
-    const li = document.createElement("li");
-    li.className = "static";
-    li.textContent = `${item.fecha} · Ingreso $${item.ingreso.toLocaleString(
-      "es-CO"
-    )} (${item.tipoIngreso || "-"}) · Gasto $${item.gasto.toLocaleString(
-      "es-CO"
-    )} (${item.categoriaGasto || "-"}) · Ahorro $${item.ahorro.toLocaleString(
-      "es-CO"
-    )}`;
-    els.recentList.appendChild(li);
+  function fillGroupSelect(tipo) {
+    const groupSelect = document.getElementById("input-grupo");
+    groupSelect.innerHTML = "";
+    Object.entries(CATEGORIES[tipo].groups).forEach(([key, g]) => {
+      const opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = g.label;
+      groupSelect.appendChild(opt);
+    });
+    fillSubcatSelect(tipo, groupSelect.value);
   }
-}
 
-function getPending() {
-  try {
-    return JSON.parse(localStorage.getItem(PENDING_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function savePending(items) {
-  localStorage.setItem(PENDING_KEY, JSON.stringify(items));
-  renderPending();
-}
-
-function renderPending() {
-  const items = getPending();
-  els.pendingBox.hidden = items.length === 0;
-  els.pendingCount.textContent = String(items.length);
-}
-
-async function flushPending() {
-  const config = getConfig();
-  if (!config) return;
-  let items = getPending();
-  if (items.length === 0) return;
-
-  const remaining = [];
-  for (const row of items) {
-    try {
-      const token = await getAccessToken();
-      await addTableRow(token, config.itemId, config.tableName, row.values);
-    } catch (err) {
-      remaining.push(row);
-    }
-  }
-  savePending(remaining);
-  if (remaining.length < items.length) {
-    els.formStatus.hidden = false;
-    els.formStatus.textContent = `Se enviaron ${
-      items.length - remaining.length
-    } registro(s) pendientes.`;
-  }
-}
-
-function todayISO() {
-  const now = new Date();
-  const tz = now.getTimezoneOffset();
-  const local = new Date(now.getTime() - tz * 60000);
-  return local.toISOString().slice(0, 10);
-}
-
-async function enterFormView() {
-  const config = getConfig();
-  els.currentFileName.textContent = config.itemName;
-  els.inputFecha.value = todayISO();
-  showView("form");
-  renderRecent();
-  renderPending();
-  flushPending();
-}
-
-async function enterSetupView() {
-  showView("setup");
-  els.setupDetails.hidden = true;
-  els.fileResults.innerHTML = "";
-  selectedFile = null;
-  els.setupAccount.textContent = activeAccount?.username
-    ? `Sesión iniciada como: ${activeAccount.username}`
-    : "";
-}
-
-// ---- Eventos ----
-
-els.signin.addEventListener("click", async () => {
-  els.loginError.hidden = true;
-  try {
-    await signIn();
-    await afterLogin();
-  } catch (err) {
-    els.loginError.hidden = false;
-    els.loginError.textContent = "No se pudo iniciar sesión: " + err.message;
-  }
-});
-
-els.signout.addEventListener("click", async () => {
-  try {
-    await signOut();
-  } catch {
-    // el usuario puede cancelar el popup de logout, no es un error crítico
-  }
-  showView("login");
-});
-
-els.btnChangeFile.addEventListener("click", () => {
-  enterSetupView();
-});
-
-els.formSearch.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  els.setupError.hidden = true;
-  els.fileResults.innerHTML = "<li class='static'>Buscando…</li>";
-  els.setupDetails.hidden = true;
-  try {
-    const token = await getAccessToken();
-    const files = await searchExcelFiles(token, els.inputSearch.value);
-    els.fileResults.innerHTML = "";
-    if (files.length === 0) {
-      els.fileResults.innerHTML =
-        "<li class='static'>No se encontraron archivos .xlsx con ese nombre.</li>";
+  function fillSubcatSelect(tipo, grupoKey) {
+    const wrap = document.getElementById("subcat-wrap");
+    const select = document.getElementById("input-subcat");
+    const group = CATEGORIES[tipo].groups[grupoKey];
+    if (!group || !group.subcats) {
+      wrap.hidden = true;
+      select.innerHTML = "";
       return;
     }
-    for (const file of files) {
-      const li = document.createElement("li");
-      li.textContent = file.name;
-      li.addEventListener("click", () => selectFile(file, li));
-      els.fileResults.appendChild(li);
-    }
-  } catch (err) {
-    els.setupError.hidden = false;
-    els.setupError.textContent = "Error al buscar: " + err.message;
-  }
-});
-
-async function selectFile(file, liEl) {
-  document
-    .querySelectorAll("#file-results li")
-    .forEach((li) => li.classList.remove("selected"));
-  liEl.classList.add("selected");
-  selectedFile = { id: file.id, name: file.name };
-
-  els.setupError.hidden = true;
-  els.setupDetails.hidden = false;
-  els.selectWorksheet.innerHTML = "<option>Cargando…</option>";
-  try {
-    const token = await getAccessToken();
-    const sheets = await listWorksheets(token, file.id);
-    els.selectWorksheet.innerHTML = "";
-    for (const sheet of sheets) {
+    wrap.hidden = false;
+    select.innerHTML = "";
+    group.subcats.forEach((s) => {
       const opt = document.createElement("option");
-      opt.value = sheet.name;
-      opt.textContent = sheet.name;
-      els.selectWorksheet.appendChild(opt);
-    }
-  } catch (err) {
-    els.setupError.hidden = false;
-    els.setupError.textContent = "Error al leer las hojas: " + err.message;
-  }
-}
-
-els.btnConfirmSetup.addEventListener("click", async () => {
-  if (!selectedFile) return;
-  els.setupError.hidden = true;
-  els.setupStatus.hidden = false;
-  els.setupStatus.textContent = "Preparando la tabla…";
-  try {
-    const token = await getAccessToken();
-    const worksheetName = els.selectWorksheet.value;
-    const tableName = els.inputTablename.value.trim() || "Gastos";
-    const table = await ensureTable(
-      token,
-      selectedFile.id,
-      worksheetName,
-      tableName,
-      TABLE_HEADERS
-    );
-    await ensureSummarySheet(token, selectedFile.id, table.name);
-    saveConfig({
-      itemId: selectedFile.id,
-      itemName: selectedFile.name,
-      worksheetName,
-      tableName: table.name,
+      opt.value = s;
+      opt.textContent = s;
+      select.appendChild(opt);
     });
-    els.setupStatus.textContent = "¡Listo!";
-    await enterFormView();
-  } catch (err) {
-    els.setupError.hidden = false;
-    els.setupError.textContent = "Error al preparar la tabla: " + err.message;
-  } finally {
-    els.setupStatus.hidden = true;
   }
-});
 
-els.formEntry.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  els.formError.hidden = true;
-  els.formStatus.hidden = true;
+  function setupForm() {
+    const tipoSelect = document.getElementById("input-tipo");
+    const grupoSelect = document.getElementById("input-grupo");
+    const fechaInput = document.getElementById("input-fecha");
+    fechaInput.value = new Date().toISOString().slice(0, 10);
 
-  const config = getConfig();
-  const fecha = els.inputFecha.value;
-  const ingreso = Number(els.inputIngreso.value || 0);
-  const tipoIngreso = els.inputTipoIngreso.value.trim();
-  const gasto = Number(els.inputGasto.value || 0);
-  const categoriaGasto = els.inputCategoriaGasto.value.trim();
-  const ahorro = Number(els.inputAhorro.value || 0);
+    tipoSelect.addEventListener("change", () => fillGroupSelect(tipoSelect.value));
+    grupoSelect.addEventListener("change", () => fillSubcatSelect(tipoSelect.value, grupoSelect.value));
+    fillGroupSelect(tipoSelect.value);
 
-  const values = [fecha, ingreso, tipoIngreso, gasto, categoriaGasto, ahorro];
+    document.getElementById("form-nuevo").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const tipo = tipoSelect.value;
+      const grupo = grupoSelect.value;
+      const subcatWrap = document.getElementById("subcat-wrap");
+      const subcat = subcatWrap.hidden ? null : document.getElementById("input-subcat").value;
+      const monto = Number(document.getElementById("input-monto").value);
+      const fecha = fechaInput.value;
+      const nota = document.getElementById("input-nota").value.trim();
 
-  try {
-    const token = await getAccessToken();
-    await addTableRow(token, config.itemId, config.tableName, values);
-    els.formStatus.hidden = false;
-    els.formStatus.textContent = "Guardado en Excel ✔";
-    pushRecent({ fecha, ingreso, tipoIngreso, gasto, categoriaGasto, ahorro });
-    els.formEntry.reset();
-    els.inputFecha.value = todayISO();
-  } catch (err) {
-    const pending = getPending();
-    pending.push({ values, savedAt: Date.now() });
-    savePending(pending);
-    els.formError.hidden = false;
-    els.formError.textContent =
-      "No se pudo guardar ahora (sin conexión o token vencido). Se guardó localmente y se reintentará.";
-    els.formEntry.reset();
-    els.inputFecha.value = todayISO();
+      if (!fecha || !monto || monto <= 0) {
+        showStatus("form-status", "Ingresa una fecha y un monto válido.", true);
+        return;
+      }
+
+      await DB.add({ tipo, grupo, subcat, monto, fecha, nota });
+      await reloadTransactions();
+
+      document.getElementById("input-monto").value = "";
+      document.getElementById("input-nota").value = "";
+      showStatus("form-status", "Registro guardado.", false);
+      currentYear = new Date(fecha + "T00:00:00").getFullYear();
+      syncYearSelect();
+    });
   }
-});
 
-els.btnRetryPending.addEventListener("click", flushPending);
-
-async function afterLogin() {
-  const config = getConfig();
-  if (config) {
-    await enterFormView();
-  } else {
-    await enterSetupView();
+  function showStatus(elId, msg, isError) {
+    const el = document.getElementById(elId);
+    el.textContent = msg;
+    el.hidden = false;
+    el.classList.toggle("error", isError);
+    setTimeout(() => (el.hidden = true), 2500);
   }
-}
 
-(async function init() {
-  try {
-    const account = await initAuth();
-    if (account) {
-      await afterLogin();
-    } else {
-      showView("login");
+  // ---------- Dashboard: selector de año ----------
+
+  function syncYearSelect() {
+    const select = document.getElementById("select-year");
+    const years = availableYears(transactions);
+    select.innerHTML = "";
+    years.forEach((y) => {
+      const opt = document.createElement("option");
+      opt.value = y;
+      opt.textContent = y;
+      select.appendChild(opt);
+    });
+    select.value = currentYear;
+    renderDashboard(transactions, currentYear);
+  }
+
+  function setupYearSelect() {
+    document.getElementById("select-year").addEventListener("change", (e) => {
+      currentYear = Number(e.target.value);
+      renderDashboard(transactions, currentYear);
+    });
+  }
+
+  // ---------- Historial ----------
+
+  function renderHistorial() {
+    const list = document.getElementById("historial-list");
+    const yearFilter = document.getElementById("historial-year").value;
+    const tipoFilter = document.getElementById("historial-tipo").value;
+
+    let rows = transactions;
+    if (yearFilter !== "todos") {
+      rows = rows.filter((t) => String(new Date(t.fecha + "T00:00:00").getFullYear()) === yearFilter);
     }
-  } catch (err) {
-    showView("login");
-    els.loginError.hidden = false;
-    els.loginError.textContent =
-      "Error al iniciar: " + err.message + " (revisa js/msal-config.js)";
+    if (tipoFilter !== "todos") {
+      rows = rows.filter((t) => t.tipo === tipoFilter);
+    }
+
+    list.innerHTML = "";
+    if (rows.length === 0) {
+      list.innerHTML = '<p class="empty-hint">No hay registros con este filtro.</p>';
+      return;
+    }
+
+    rows.forEach((t) => {
+      const item = document.createElement("li");
+      item.className = "hist-item";
+      const subcatTxt = t.subcat ? " · " + t.subcat : "";
+      item.innerHTML = `
+        <span class="hist-dot" style="background:${CATEGORIES[t.tipo].color}"></span>
+        <div class="hist-main">
+          <div class="hist-title">${groupLabel(t.tipo, t.grupo)}${subcatTxt}</div>
+          <div class="hist-sub">${t.fecha}${t.nota ? " · " + t.nota : ""}</div>
+        </div>
+        <div class="hist-amount">${formatCOP(t.monto)}</div>
+        <button class="hist-delete" aria-label="Eliminar" data-id="${t.id}">✕</button>
+      `;
+      list.appendChild(item);
+    });
+
+    list.querySelectorAll(".hist-delete").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        await DB.remove(btn.dataset.id);
+        await reloadTransactions();
+        renderHistorial();
+      });
+    });
   }
 
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js").catch(() => {});
+  function setupHistorialFilters() {
+    const yearSelect = document.getElementById("historial-year");
+    const fillYears = () => {
+      yearSelect.innerHTML = '<option value="todos">Todos los años</option>';
+      availableYears(transactions).forEach((y) => {
+        const opt = document.createElement("option");
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+      });
+    };
+    fillYears();
+    yearSelect.addEventListener("change", renderHistorial);
+    document.getElementById("historial-tipo").addEventListener("change", renderHistorial);
   }
 
-  window.addEventListener("online", flushPending);
+  // ---------- Ajustes: respaldo local ----------
+
+  function setupAjustes() {
+    document.getElementById("btn-export").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(transactions, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `guarda-gastos-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById("input-import").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      try {
+        const data = JSON.parse(text);
+        if (!Array.isArray(data)) throw new Error("formato inválido");
+        if (!confirm(`Se importarán ${data.length} registros y se reemplazarán los datos actuales. ¿Continuar?`)) {
+          e.target.value = "";
+          return;
+        }
+        await DB.replaceAll(data);
+        await reloadTransactions();
+        showStatus("ajustes-status", "Datos importados correctamente.", false);
+      } catch (err) {
+        showStatus("ajustes-status", "El archivo no es un respaldo válido.", true);
+      }
+      e.target.value = "";
+    });
+
+    document.getElementById("btn-reset").addEventListener("click", async () => {
+      if (!confirm("Esto borrará TODOS los registros guardados en este dispositivo. ¿Continuar?")) return;
+      await DB.replaceAll([]);
+      await reloadTransactions();
+      showStatus("ajustes-status", "Todos los registros fueron borrados.", false);
+    });
+  }
+
+  // ---------- Carga de datos ----------
+
+  async function reloadTransactions() {
+    transactions = await DB.all();
+    syncYearSelect();
+    const yearSelect = document.getElementById("historial-year");
+    if (yearSelect) {
+      const prev = yearSelect.value;
+      yearSelect.innerHTML = '<option value="todos">Todos los años</option>';
+      availableYears(transactions).forEach((y) => {
+        const opt = document.createElement("option");
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+      });
+      if (Array.from(yearSelect.options).some((o) => o.value === prev)) yearSelect.value = prev;
+    }
+  }
+
+  async function init() {
+    setupTabs();
+    setupForm();
+    setupYearSelect();
+    setupHistorialFilters();
+    setupAjustes();
+    await reloadTransactions();
+    showView("dashboard");
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
 })();

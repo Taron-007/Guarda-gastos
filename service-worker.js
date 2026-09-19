@@ -1,17 +1,17 @@
-// Service worker mínimo: solo cachea el "shell" de la app para que abra rápido
-// y se pueda instalar en la pantalla de inicio del iPhone. No cachea llamadas
-// a Microsoft Graph (esas siempre deben ir a la red).
+// Service worker mínimo: cachea el "shell" de la app (HTML/CSS/JS) para que
+// abra rápido y funcione sin conexión. Todos los datos viven en IndexedDB en
+// el propio dispositivo, así que no hay llamadas de red que excluir.
 
-const CACHE_NAME = "guarda-gastos-v8";
+const CACHE_NAME = "guarda-gastos-v9";
 const SHELL_FILES = [
   "./",
   "./index.html",
   "./css/style.css",
-  "./js/vendor/msal-browser.min.js",
+  "./js/categories.js",
+  "./js/db.js",
+  "./js/charts.js",
+  "./js/dashboard.js",
   "./js/app.js",
-  "./js/auth.js",
-  "./js/graph.js",
-  "./js/msal-config.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -38,13 +38,6 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
-
-  // Nunca interceptar llamadas a Microsoft (login ni Graph API).
-  if (url.hostname.endsWith("microsoftonline.com") || url.hostname.endsWith("graph.microsoft.com") || url.hostname.endsWith("msauth.net")) {
-    return;
-  }
-
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
