@@ -71,6 +71,18 @@
         <button id="btn-change-file" class="link-btn">cambiar</button>
       </p>
 
+      <!-- Jarvis: asistente para registrar y consultar con texto o voz -->
+      <section id="jarvis" class="jarvis" aria-label="Asistente Jarvis">
+        <div class="jarvis-head">🤖 Jarvis <span>registra o pregunta con tus palabras</span></div>
+        <div id="jarvis-log" class="jarvis-log" aria-live="polite"></div>
+        <form id="jarvis-form" class="row jarvis-input-row">
+          <input id="jarvis-input" type="text" autocomplete="off" placeholder="Ej: gasté 25 mil en almuerzo" />
+          <button id="jarvis-mic" type="button" class="jarvis-mic" aria-label="Hablar con Jarvis">🎤</button>
+          <button type="submit" class="primary-btn">Enviar</button>
+        </form>
+      </section>
+
+      <h3>Registro manual</h3>
       <form id="form-entry">
         <label>
           Fecha
@@ -154,5 +166,6 @@
   <script src="js/auth.js"></script>
   <script src="js/graph.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/jarvis.js"></script>
 </body>
 </html>
