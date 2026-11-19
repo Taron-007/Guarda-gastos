@@ -171,3 +171,17 @@ async function addTableRow(accessToken, itemId, tableName, values) {
     }
   );
 }
+
+/**
+ * Devuelve todas las filas de datos de la tabla (sin encabezados) como arreglo
+ * de arreglos de valores. Usado por Jarvis para responder consultas de totales.
+ */
+async function getTableValues(accessToken, itemId, tableName) {
+  const data = await graphFetch(
+    accessToken,
+    `/me/drive/items/${itemId}/workbook/tables/${encodeURIComponent(
+      tableName
+    )}/dataBodyRange?$select=values`
+  );
+  return (data.values || []).filter((row) => row.some((v) => v !== "" && v !== null));
+}

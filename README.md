@@ -128,6 +128,27 @@ Entra ID si quieres probar así).
 Puedes cambiar de archivo/tabla en cualquier momento con el botón "cambiar"
 junto al nombre del archivo.
 
+## Jarvis: registra y consulta hablando
+
+En la pantalla principal está **Jarvis**, un asistente que entiende frases en
+español (escritas o dictadas con el botón 🎤):
+
+- «gasté 25 mil en almuerzo» → Gasto $25.000, Alimentación, hoy
+- «ayer pagué 80 mil de luz y 12 mil de taxi» → dos registros con fecha de ayer
+- «me pagaron la quincena 2,5 millones y ahorré 300 mil» → Ingreso (Salario) + Ahorro
+- «compré 2 almuerzos de 15 mil», «netflix 45k», «me consignaron 3 palos», «15/11 mercado 230.500»
+- «¿cuánto gasté este mes?», «¿cuánto gasté en transporte esta semana?»,
+  «resumen del mes pasado», «¿cuánto ahorré en octubre?»
+
+Antes de guardar, Jarvis muestra lo que entendió y te deja **Guardar en
+Excel**, **Editar en formulario** o **Cancelar**. Las consultas leen la tabla
+de tu Excel y suman en el teléfono. Todo se interpreta localmente en el
+navegador: no usa servidores ni claves de API adicionales.
+
+La voz usa el reconocimiento de voz del navegador; en iPhone requiere Safari
+con Siri/Dictado activado. Si no está disponible, el botón 🎤 se oculta y
+puedes usar el dictado del teclado.
+
 ## Funcionamiento sin conexión
 
 Si guardas un registro sin internet (o el envío falla), la app lo guarda
@@ -143,6 +164,7 @@ js/msal-config.js     Configuración de tu registro de Microsoft (clientId)
 js/auth.js            Inicio de sesión (MSAL)
 js/graph.js            Llamadas a Microsoft Graph (buscar archivo, tablas, filas)
 js/app.js              Lógica de interfaz
+js/jarvis.js           Asistente Jarvis (interpreta frases y consultas)
 manifest.webmanifest  Metadatos de la app instalable (PWA)
 service-worker.js     Cacheo básico para abrir rápido / instalar en iPhone
 icons/                Íconos de la app

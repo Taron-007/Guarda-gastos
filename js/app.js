@@ -284,39 +284,61 @@ els.btnConfirmSetup.addEventListener("click", async () => {
   }
 });
 
+/**
+ * Guarda un registro en Excel (o lo deja pendiente si no hay conexión).
+ * Lo usan tanto el formulario como Jarvis. Devuelve { ok: true } si quedó en
+ * Excel, o { ok: false, error } si quedó guardado localmente.
+ */
+async function saveEntry({ fecha, ingreso = 0, tipoIngreso = "", gasto = 0, categoriaGasto = "", ahorro = 0 }) {
+  const config = getConfig();
+  const values = [fecha, ingreso, tipoIngreso, gasto, categoriaGasto, ahorro];
+  try {
+    const token = await getAccessToken();
+    await addTableRow(token, config.itemId, config.tableName, values);
+    pushRecent({ fecha, ingreso, tipoIngreso, gasto, categoriaGasto, ahorro });
+    return { ok: true };
+  } catch (error) {
+    const pending = getPending();
+    pending.push({ values, savedAt: Date.now() });
+    savePending(pending);
+    return { ok: false, error };
+  }
+}
+
+/** Llena el formulario con un registro (usado por Jarvis para "Editar"). */
+function fillForm({ fecha, ingreso, tipoIngreso, gasto, categoriaGasto, ahorro }) {
+  els.inputFecha.value = fecha || todayISO();
+  els.inputIngreso.value = ingreso || "";
+  els.inputTipoIngreso.value = tipoIngreso || "";
+  els.inputGasto.value = gasto || "";
+  els.inputCategoriaGasto.value = categoriaGasto || "";
+  els.inputAhorro.value = ahorro || "";
+}
+
 els.formEntry.addEventListener("submit", async (e) => {
   e.preventDefault();
   els.formError.hidden = true;
   els.formStatus.hidden = true;
 
-  const config = getConfig();
-  const fecha = els.inputFecha.value;
-  const ingreso = Number(els.inputIngreso.value || 0);
-  const tipoIngreso = els.inputTipoIngreso.value.trim();
-  const gasto = Number(els.inputGasto.value || 0);
-  const categoriaGasto = els.inputCategoriaGasto.value.trim();
-  const ahorro = Number(els.inputAhorro.value || 0);
+  const result = await saveEntry({
+    fecha: els.inputFecha.value,
+    ingreso: Number(els.inputIngreso.value || 0),
+    tipoIngreso: els.inputTipoIngreso.value.trim(),
+    gasto: Number(els.inputGasto.value || 0),
+    categoriaGasto: els.inputCategoriaGasto.value.trim(),
+    ahorro: Number(els.inputAhorro.value || 0),
+  });
 
-  const values = [fecha, ingreso, tipoIngreso, gasto, categoriaGasto, ahorro];
-
-  try {
-    const token = await getAccessToken();
-    await addTableRow(token, config.itemId, config.tableName, values);
+  if (result.ok) {
     els.formStatus.hidden = false;
     els.formStatus.textContent = "Guardado en Excel ✔";
-    pushRecent({ fecha, ingreso, tipoIngreso, gasto, categoriaGasto, ahorro });
-    els.formEntry.reset();
-    els.inputFecha.value = todayISO();
-  } catch (err) {
-    const pending = getPending();
-    pending.push({ values, savedAt: Date.now() });
-    savePending(pending);
+  } else {
     els.formError.hidden = false;
     els.formError.textContent =
       "No se pudo guardar ahora (sin conexión o token vencido). Se guardó localmente y se reintentará.";
-    els.formEntry.reset();
-    els.inputFecha.value = todayISO();
   }
+  els.formEntry.reset();
+  els.inputFecha.value = todayISO();
 });
 
 els.btnRetryPending.addEventListener("click", flushPending);
